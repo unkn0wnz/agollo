@@ -55,6 +55,7 @@ type agollo struct {
 	initialized     sync.Map // key: namespace value: bool
 
 	watchCh             chan *ApolloResponse // watch all namespace
+	watchLock           sync.Mutex           // watch channel read write lock
 	watchNamespaceChMap sync.Map             // key: namespace value: chan *ApolloResponse
 
 	errorsCh chan *LongPollerError
@@ -349,6 +350,9 @@ func (a *agollo) sendWatchCh(namespace string, oldVal, newVal Configurations) {
 }
 
 func (a *agollo) getWatchChs(namespace string) []chan *ApolloResponse {
+	a.watchLock.Lock()
+	defer a.watchLock.Unlock()
+
 	var chs []chan *ApolloResponse
 	if a.watchCh != nil {
 		chs = append(chs, a.watchCh)
